@@ -2,7 +2,9 @@ import os
 import sqlite3
 import datetime
 import matplotlib.pyplot as plt
+from threading import Thread
 
+from flask import Flask
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -179,9 +181,26 @@ async def monthly(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("داده کافی نداریم.")
 
 # =========================
+# FLASK SERVER FOR RENDER
+# =========================
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def health_check():
+    return "Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get('PORT', 10000))
+    flask_app.run(host='0.0.0.0', port=port)
+
+# =========================
 # MAIN
 # =========================
 def main():
+    # راه‌اندازی سرور Flask در یک ترد جداگانه
+    Thread(target=run_flask, daemon=True).start()
+    
+    # راه‌اندازی ربات تلگرام
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -189,7 +208,7 @@ def main():
     app.add_handler(CommandHandler("monthly", monthly))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
 
-    print("Bot running...")
+    print("Bot running on Render...")
     app.run_polling()
 
 if __name__ == "__main__":
