@@ -20,7 +20,7 @@ gpt = OpenAI(api_key=OPENAI_KEY)
 claude = anthropic.Anthropic(api_key=CLAUDE_KEY)
 
 # =========================
-# DB SETUP
+# DB
 # =========================
 conn = sqlite3.connect("data.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -37,12 +37,12 @@ CREATE TABLE IF NOT EXISTS logs (
 conn.commit()
 
 # =========================
-# MEMORY (daily session)
+# MEMORY
 # =========================
 memory = {}
 
 # =========================
-# AI: SCORE + ANALYSIS
+# AI EVALUATION
 # =========================
 def evaluate(plan, report):
     try:
@@ -60,10 +60,10 @@ def evaluate(plan, report):
 گزارش:
 {report}
 
-خروجی دقیق بده:
+خروجی:
 - درصد انجام (0 تا 100)
 - ایراد اصلی
-- یک جمله تشویقی واقعی (نه الکی)
+- یک جمله تشویقی واقعی
 - امتیاز نهایی 0 تا 100
 """
             }]
@@ -76,19 +76,17 @@ def coach(text):
     res = gpt.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "تو یک کوچ سخت‌گیر، رک و واقع‌بین هستی."},
+            {"role": "system", "content": "تو یک کوچ سخت‌گیر و کاملاً واقع‌بین هستی."},
             {"role": "user", "content": text}
         ]
     )
     return res.choices[0].message.content
 
 # =========================
-# TELEGRAM
+# HANDLERS
 # =========================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "سلام 👋\nبرنامه امروزتو بنویس."
-    )
+    await update.message.reply_text("سلام 👋 برنامه امروزتو بنویس.")
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -108,7 +106,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     analysis = evaluate(plan, report)
 
-    # استخراج ساده امتیاز (fallback امن)
     try:
         score = int([x for x in analysis.split() if x.isdigit()][-1])
     except:
@@ -116,7 +113,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     final_reply = coach(analysis)
 
-    # save DB
     cursor.execute(
         "INSERT INTO logs VALUES (?, ?, ?, ?, ?)",
         (user_id, today, plan, report, score)
@@ -142,8 +138,7 @@ def get_scores(user_id, mode="week"):
     elif mode == "month":
         data = data[:30]
 
-    data = data[::-1]
-    return data
+    return data[::-1]
 
 def make_chart(user_id, mode):
     data = get_scores(user_id, mode)
