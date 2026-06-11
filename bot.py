@@ -42,7 +42,7 @@ conn.commit()
 memory = {}
 
 # =========================
-# AI EVALUATION
+# AI
 # =========================
 def evaluate(plan, report):
     try:
@@ -52,8 +52,6 @@ def evaluate(plan, report):
             messages=[{
                 "role": "user",
                 "content": f"""
-تو یک مربی سخت‌گیر واقعی هستی.
-
 برنامه:
 {plan}
 
@@ -61,9 +59,9 @@ def evaluate(plan, report):
 {report}
 
 خروجی:
-- درصد انجام (0 تا 100)
+- درصد (0 تا 100)
 - ایراد اصلی
-- یک جمله تشویقی واقعی
+- تشویق واقعی
 - امتیاز نهایی 0 تا 100
 """
             }]
@@ -72,11 +70,12 @@ def evaluate(plan, report):
     except:
         return "50|خطا|ادامه بده|50"
 
+
 def coach(text):
     res = gpt.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "تو یک کوچ سخت‌گیر و کاملاً واقع‌بین هستی."},
+            {"role": "system", "content": "تو یک کوچ سخت‌گیر، واقعی و بدون تعارف هستی."},
             {"role": "user", "content": text}
         ]
     )
@@ -85,10 +84,11 @@ def coach(text):
 # =========================
 # HANDLERS
 # =========================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("سلام 👋 برنامه امروزتو بنویس.")
+def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    update.message.reply_text("سلام 👋 برنامه امروزتو بنویس.")
 
-async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
     today = str(datetime.date.today())
@@ -98,7 +98,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if memory[user_id]["plan"] is None:
         memory[user_id]["plan"] = text
-        await update.message.reply_text("ثبت شد 👌 شب گزارش بده.")
+        update.message.reply_text("ثبت شد 👌 شب گزارش بده.")
         return
 
     plan = memory[user_id]["plan"]
@@ -121,7 +121,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     memory[user_id] = {"plan": None}
 
-    await update.message.reply_text(f"📊 امتیاز: {score}/100\n\n{final_reply}")
+    update.message.reply_text(f"📊 امتیاز: {score}/100\n\n{final_reply}")
 
 # =========================
 # CHARTS
@@ -139,6 +139,7 @@ def get_scores(user_id, mode="week"):
         data = data[:30]
 
     return data[::-1]
+
 
 def make_chart(user_id, mode):
     data = get_scores(user_id, mode)
@@ -161,22 +162,21 @@ def make_chart(user_id, mode):
 
     return path
 
-# =========================
-# COMMANDS
-# =========================
-async def weekly(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+def weekly(update: Update, context: ContextTypes.DEFAULT_TYPE):
     path = make_chart(update.effective_user.id, "week")
     if path:
-        await update.message.reply_photo(photo=open(path, "rb"))
+        update.message.reply_photo(photo=open(path, "rb"))
     else:
-        await update.message.reply_text("داده کافی نداریم.")
+        update.message.reply_text("داده کافی نداریم.")
 
-async def monthly(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+def monthly(update: Update, context: ContextTypes.DEFAULT_TYPE):
     path = make_chart(update.effective_user.id, "month")
     if path:
-        await update.message.reply_photo(photo=open(path, "rb"))
+        update.message.reply_photo(photo=open(path, "rb"))
     else:
-        await update.message.reply_text("داده کافی نداریم.")
+        update.message.reply_text("داده کافی نداریم.")
 
 # =========================
 # MAIN
@@ -191,6 +191,7 @@ def main():
 
     print("Bot running...")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
